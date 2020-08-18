@@ -95,7 +95,7 @@ summary(fit)
 Looking at the summary, we see that holding gender and job category constant we don't see a major difference in Income across the Major Categories, indicating that Major Categories don't have a strong impact on Income.
 
 ```{r residuals plot,fig.height=4}
-plot(fit)
+plot(fit,col=c("orange",alpha=0.25))
 #fit_residuals <- residuals(fit)
 #fitted <- fitted.values(fit)
 #plot(density(fit_rediduals))
