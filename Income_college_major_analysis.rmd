@@ -1,0 +1,105 @@
+---
+title: "Analysis Of Income and College Major"
+author: "Danish Tamboli"
+date: "8/18/2020"
+output: pdf_document
+---
+
+### Dependancies/Inital Setup
+
+First we will load the dataset from the collegeIncome package.
+
+```{r Dependancies}
+library(collegeIncome)
+data(college)
+```
+
+#### Dataset columns
+
+```{r Names}
+dim(college)
+names(college)
+```
+
+From this we see that the Dataset consists of 19 fields, some of which will be useful to us for Inference.
+
+#### Dataset Summary
+
+```{r Summary}
+head(college)
+summary(college)
+```
+
+The First thing that interests us from this are the different Majors and Major Categories
+
+```{r Majors}
+with(college,head(table(major)))
+with(college,table(major_category))
+```
+
+We will not have a look at Majors as there exists many majors with just 1 entry which aren't sufficient to factor in their effect, Rather we will look into Major Categories
+
+We should remove the Interdisciplinary category from the Major Categories as it has a sample size of just 1, which certainly not enough to draw conclusions around it.
+
+```{r filtering Major Catergories}
+library(dplyr)
+new_college <- college %>% 
+        filter(major_category != "Interdisciplinary")
+table(new_college$major_category)
+```
+
+Now that we have removed Interdisciplinary Major category we can proceed.
+
+```{r basic plots}
+library(ggplot2)
+
+ggplot(data = new_college, aes(x = major_category, y = p25th))  + geom_boxplot(aes(x = major_category, y = p25th)) + theme(axis.text.x = element_text(angle = 90)) + labs(x = "Major Category", y = "25th Percentile Income", title = "25th Percentile Income of different Major Categories")
+
+ggplot(data = new_college, aes(x = major_category, y = median))  + geom_boxplot(aes(x = major_category, y = median)) + theme(axis.text.x = element_text(angle = 90)) + labs(x = "Major Category", y = "Median Income", title = "Median Income of different Major Categories")
+
+ggplot(data = new_college, aes(x = major_category, y = p75th))  + geom_boxplot(aes(x = major_category, y = p75th)) + theme(axis.text.x = element_text(angle = 90)) + labs(x = "Major Category", y = "75th Percentile Income", title = "75th Percentile Income of different Major Categories")
+
+```
+
+Upon looking at the 25th, 50th and 75th percentile of Incomes across various Major Categories we observe no major variation, We will take the Median as an outcome.
+
+### Linear Regression/ Linear Curve fitting
+
+Upon looking further into the fields of the Dataset we see:
+
+ * Employment is divided into Full time and Part time and Unemployed.
+ * Jobs are divided into COllege, Non College and Low wage jobs.
+ * Income is also separated by Gender.
+ 
+We will take some of these factors into account as predictors when fitting the outcome Median Income.
+
+```{r linear regression}
+
+fit <- lm(median ~ major_category + perc_men + perc_college_jobs + perc_low_wage_jobs,new_college)
+
+```
+
+Fields we have haven't taken into account and why:
+ 
+ * perc_women, Taken into account when perc_men was included as predictor (Singularity)
+ * rank, major_code, major, Not taken into account as most fields have 1 sample, not enough to make conclusions, major_category taken instead.
+ * total, sample-size, Irrelevant with respect to our need.
+ * p25th, p75th, Not taken into account as no drastic variation noticed, hence median is a good estimate to select as outcome.
+ * perc_employed, perc_employed_fulltime, perc_employed_parttime, perc_employed_fulltime_yearround, perc_unemployed, Not taken into account as we are looking at Income regardless of Duration they are employed within a year or whether they work full time or part time.
+ * perc_non_college_jobs, Taken into account when perc_college_jobs and perc_low_wage_jobs were included as predictiors (Singularity)
+
+```{r summary}
+summary(fit)
+```
+
+Looking at the summary, we see that holding gender and job category constant we don't see a major difference in Income across the Major Categories, indicating that Major Categories don't have a strong impact on Income.
+
+```{r residuals plot,fig.height=4}
+plot(fit)
+#fit_residuals <- residuals(fit)
+#fitted <- fitted.values(fit)
+#plot(density(fit_rediduals))
+#plot(fitted,fit_residuals)
+```
+
+Looking at Plot 1 (Residuals vs Fitted) we see that Normality assumptions are not far off, Overall there doesn't seem to be an effect of College Major Category on Median Income of an Indivisual in this particular study.
